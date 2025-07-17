@@ -298,12 +298,240 @@ def update_plant_api(plant_id: int):
     return jsonify({'success': True})
 
 
+# --- Data Visualization Endpoints ---
+@app.route('/api/data/all-today/<int:pot_id>')
+@login_required
+def get_all_today(pot_id: int):
+    """Get all values for today for a specific pot"""
+    response_data = _make_api_request("GET", "/json/all-today", params={"pot_id": pot_id})
+    if response_data:
+        return jsonify(response_data)
+    return jsonify([]), 404
+
+
+@app.route('/api/data/sunlight-30days/<int:pot_id>')
+@login_required
+def get_sunlight_30days(pot_id: int):
+    """Get sunlight data for the last 30 days for a specific pot"""
+    response_data = _make_api_request("GET", "/json/sunlight-30days", params={"pot_id": pot_id})
+    if response_data:
+        return jsonify(response_data)
+    return jsonify([]), 404
+
+
+@app.route('/api/data/latest-value/<int:pot_id>')
+@login_required
+def get_latest_value(pot_id: int):
+    """Get the latest value for a specific pot"""
+    response_data = _make_api_request("GET", "/json/latest-value", params={"pot_id": pot_id})
+    if response_data:
+        return jsonify(response_data)
+    return jsonify({}), 404
+
+
+@app.route('/api/data/average-mtd/<int:pot_id>')
+@login_required
+def get_average_mtd(pot_id: int):
+    """Get average measurements month-to-date for a specific pot"""
+    response_data = _make_api_request("GET", "/json/average-mtd", params={"pot_id": pot_id})
+    if response_data:
+        return jsonify(response_data)
+    return jsonify({}), 404
+
+
+# --- Plant Management Endpoints ---
+@app.route('/api/plants', methods=['POST'])
+@login_required
+def create_plant():
+    """Create a new plant profile"""
+    data = request.get_json(silent=True) or {}
+    encoded_data = _encode_form_data(data)
+    
+    # Validate required fields
+    required_fields = ['name', 'description', 'irrigation_cycle_days', 'target_temperature_celsius', 
+                      'target_sunlight_hours', 'target_air_humidity_percent', 'target_soil_moisture_percent']
+    
+    for field in required_fields:
+        if field not in encoded_data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    response_data = _make_api_request("POST", "/insert/insert-plant", data=encoded_data)
+    if response_data:
+        logging.info("Plant created by user %s: %s", session.get('user_id'), encoded_data.get('name'))
+        return jsonify(response_data), 201
+    return jsonify({'error': 'Failed to create plant'}), 500
+
+
+@app.route('/api/plants/<int:plant_id>', methods=['DELETE'])
+@login_required
+def delete_plant(plant_id: int):
+    """Delete a plant profile"""
+    response_data = _make_api_request("DELETE", "/delete/delete-plant", data={"plant_id": plant_id})
+    if response_data:
+        logging.info("Plant %d deleted by user %s", plant_id, session.get('user_id'))
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to delete plant'}), 500
+
+
+# --- Pot Management Endpoints ---
+@app.route('/api/pots/<int:pot_id>', methods=['PATCH'])
+@login_required
+def update_pot(pot_id: int):
+    """Update pot name"""
+    data = request.get_json(silent=True) or {}
+    encoded_data = _encode_form_data(data)
+    
+    if 'pot_name' not in encoded_data:
+        return jsonify({'error': 'Missing required field: pot_name'}), 400
+    
+    encoded_data['pot_id'] = pot_id
+    response_data = _make_api_request("PATCH", "/update/update-pot", data=encoded_data)
+    if response_data:
+        logging.info("Pot %d updated by user %s: %s", pot_id, session.get('user_id'), encoded_data.get('pot_name'))
+        return jsonify(response_data)
+    return jsonify({'error': 'Failed to update pot'}), 500
+
+
+@app.route('/api/pots/<int:pot_id>', methods=['DELETE'])
+@login_required
+def delete_pot(pot_id: int):
+    """Delete a pot"""
+    response_data = _make_api_request("DELETE", "/delete/delete-pot", data={"pot_id": pot_id})
+    if response_data:
+        logging.info("Pot %d deleted by user %s", pot_id, session.get('user_id'))
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to delete pot'}), 500
+
+
+# --- User-Pot Assignment Endpoints ---
+@app.route('/api/user-pot-assignments', methods=['POST'])
+@login_required
+def create_user_pot_assignment():
+    """Assign a pot to a user"""
+    data = request.get_json(silent=True) or {}
+    encoded_data = _encode_form_data(data)
+    
+    if 'pot_id' not in encoded_data or 'user_id' not in encoded_data:
+        return jsonify({'error': 'Missing required fields: pot_id and user_id'}), 400
+    
+    response_data = _make_api_request("POST", "/insert/insert-user_pot_assignment", data=encoded_data)
+    if response_data:
+        logging.info("User-pot assignment created by user %s: pot_id=%s, user_id=%s", 
+                    session.get('user_id'), encoded_data.get('pot_id'), encoded_data.get('user_id'))
+        return jsonify(response_data), 201
+    return jsonify({'error': 'Failed to create user-pot assignment'}), 500
+
+
+@app.route('/api/user-pot-assignments/<int:pot_id>/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user_pot_assignment(pot_id: int, user_id: int):
+    """Remove pot assignment from user"""
+    response_data = _make_api_request("DELETE", "/delete/delete-user_pot_assignment", 
+                                     data={"pot_id": pot_id, "user_id": user_id})
+    if response_data:
+        logging.info("User-pot assignment deleted by user %s: pot_id=%d, user_id=%d", 
+                    session.get('user_id'), pot_id, user_id)
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to delete user-pot assignment'}), 500
+
+
+# --- Plant-Pot Assignment Endpoints ---
+@app.route('/api/plant-pot-assignments', methods=['POST'])
+@login_required
+def create_plant_pot_assignment():
+    """Assign a plant to a pot"""
+    data = request.get_json(silent=True) or {}
+    encoded_data = _encode_form_data(data)
+    
+    if 'pot_id' not in encoded_data or 'plant_id' not in encoded_data:
+        return jsonify({'error': 'Missing required fields: pot_id and plant_id'}), 400
+    
+    response_data = _make_api_request("POST", "/insert/insert-plant_pot_assignment", data=encoded_data)
+    if response_data:
+        logging.info("Plant-pot assignment created by user %s: pot_id=%s, plant_id=%s", 
+                    session.get('user_id'), encoded_data.get('pot_id'), encoded_data.get('plant_id'))
+        return jsonify(response_data), 201
+    return jsonify({'error': 'Failed to create plant-pot assignment'}), 500
+
+
+@app.route('/api/plant-pot-assignments/<int:pot_id>/<int:plant_id>', methods=['DELETE'])
+@login_required
+def delete_plant_pot_assignment(pot_id: int, plant_id: int):
+    """Remove plant assignment from pot (soft delete)"""
+    response_data = _make_api_request("DELETE", "/delete/delete-plant_pot_assignment", 
+                                     data={"pot_id": pot_id, "plant_id": plant_id})
+    if response_data:
+        logging.info("Plant-pot assignment deleted by user %s: pot_id=%d, plant_id=%d", 
+                    session.get('user_id'), pot_id, plant_id)
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to delete plant-pot assignment'}), 500
+
+
+# --- User Management Endpoints ---
+@app.route('/api/users/<user_mail>', methods=['DELETE'])
+@login_required
+def delete_user(user_mail: str):
+    """Delete a user account"""
+    current_user = session.get('user_id')
+    
+    # Only allow users to delete their own account
+    if current_user != user_mail:
+        return jsonify({'error': 'Unauthorized: You can only delete your own account'}), 403
+    
+    response_data = _make_api_request("DELETE", "/delete/delete-user", data={"user_mail": user_mail})
+    if response_data:
+        logging.info("User account deleted: %s", user_mail)
+        session.clear()  # Clear session after account deletion
+        return jsonify({'success': True})
+    return jsonify({'error': 'Failed to delete user account'}), 500
+
+
+# --- Plot Endpoints (Proxy to API) ---
+@app.route('/api/plots/<plot_type>')
+@login_required
+def get_plot(plot_type: str):
+    """Proxy plot requests to the API"""
+    pot_id = request.args.get('pot_id')
+    if not pot_id:
+        return "Missing pot_id parameter", 400
+    
+    # Map plot types to API endpoints
+    plot_mapping = {
+        'sunlight': '/plots/sunlight',
+        'temperature': '/plots/temperature',
+        'soil': '/plots/soil',
+        'luftfeuchtigkeit': '/plots/luftfeuchtigkeit'
+    }
+    
+    if plot_type not in plot_mapping:
+        return f"Unknown plot type: {plot_type}", 400
+    
+    try:
+        # Make direct request to API for plot data (HTML response)
+        url = f"{API_BASE}{plot_mapping[plot_type]}"
+        response = requests.get(url, params={"pot_id": pot_id})
+        response.raise_for_status()
+        
+        # Return HTML content directly
+        return response.text, 200, {'Content-Type': 'text/html'}
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Plot request failed for {plot_type}: {e}")
+        return f"<p>Error loading {plot_type} plot</p>", 500
+
+
 # Einstellungen
 @app.route('/settings')
 @login_required
 def settings():
     # msg_pw und msg_email können jetzt durch Flash-Nachrichten ersetzt werden
     return render_template('settings.html')
+
+
+# Verwaltungsseite
+@app.route('/management')
+@login_required
+def management():
+    return render_template('management.html')
 
 
 # --- Aktualisierte change_email() ---
