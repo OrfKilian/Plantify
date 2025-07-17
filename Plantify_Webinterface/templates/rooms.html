@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Zimmer verwalten{% endblock %}
+{% block page_title %}Zimmer verwalten{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <div class="card full-width-card">
+    <h3>Zimmer umbenennen</h3>
+    <ul id="room-list" style="list-style:none;padding:0;">
+      {% for room in rooms %}
+      <li style="display:flex;gap:10px;margin-bottom:10px;">
+        <input type="text" class="pflege-edit room-input" value="{{ room.name }}" data-slug="{{ room.slug }}">
+        <button class="pflege-edit save-room-btn" style="max-width:150px;">Speichern</button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="card full-width-card" style="margin-top:20px;">
+    <h3>Neues Zimmer hinzufügen</h3>
+    <div style="display:flex;gap:10px;">
+      <input type="text" id="new-room-input" class="pflege-edit" placeholder="Zimmername">
+      <button id="add-room-btn" class="pflege-edit" style="max-width:150px;">Hinzufügen</button>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const slugify = str => str.toLowerCase().replace(/\s+/g,'-');
+
+    function setupSave(btn){
+      btn.addEventListener('click', async function(){
+        const input = this.previousElementSibling;
+        const slug = input.dataset.slug;
+        const name = input.value;
+        const newSlug = slugify(name);
+        // API entfernt – Änderung nur lokal vornehmen
+        input.dataset.slug = newSlug;
+        alert('Zimmername gespeichert');
+      });
+    }
+
+    document.querySelectorAll('.save-room-btn').forEach(setupSave);
+
+    const addBtn = document.getElementById('add-room-btn');
+    if(addBtn){
+      addBtn.addEventListener('click', async function(){
+        const input = document.getElementById('new-room-input');
+        const name = input.value.trim();
+        if(!name) return;
+        // API entfernt – Zimmer direkt zur Liste hinzufügen
+        const slug = slugify(name);
+        const li = document.createElement('li');
+        li.style.display='flex';
+        li.style.gap='10px';
+        li.style.marginBottom='10px';
+          const newInput = document.createElement('input');
+          newInput.type='text';
+          newInput.className='pflege-edit room-input';
+          newInput.value=name;
+          newInput.dataset.slug=slug;
+          const newBtn = document.createElement('button');
+          newBtn.className='pflege-edit save-room-btn';
+          newBtn.style.maxWidth='150px';
+          newBtn.textContent='Speichern';
+          li.appendChild(newInput);
+          li.appendChild(newBtn);
+        document.getElementById('room-list').appendChild(li);
+        setupSave(newBtn);
+        input.value='';
+        alert('Zimmer hinzugefügt');
+      });
+    }
+  });
+</script>
+{% endblock %}

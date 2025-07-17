@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plantify{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Sidebar is now rendered server-side -->
+</head>
+<body class="{% if not session.user_id %}auth-layout{% endif %}">
+    <div class="topbar">
+      <div class="topbar-group">
+        <button class="toggle-btn-inline" id="sidebar-toggle">☰</button>
+        <span class="topbar-title"><a href="/">Plantify</a></span>
+        <h1 class="topbar-page-title">{% block page_title %}{% endblock %}</h1>
+      </div>
+      <div class="topbar-right">
+        {% if session.user_id %}
+          <div class="profile-dropdown" id="profile-dropdown-parent">
+            <button class="avatar-btn" id="avatar-btn">
+              <img src="{{ session.user_avatar or '/static/avatar-default.png' }}" alt="Profil" class="avatar-img">
+            </button>
+            <div class="dropdown-menu" id="profile-dropdown-menu">
+              <a href="/settings">Einstellungen</a>
+              <a href="/rooms">Zimmer verwalten</a>
+              <a href="/logout">Abmelden</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <aside class="sidebar">
+      <div class="sidebar-scrollable">
+        <ul id="sidebar-pots">
+          {% for room in rooms %}
+          <li>
+            <a href="/dashboard/{{ room.name | lower | replace(' ', '-') }}">🏠 <span class="sidebar-text">{{ room.name }}</span></a>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="sidebar-bottom">
+          <ul id="sidebar-plants">
+            {% for plant in plants %}
+            <li>
+              <a href="/pflanze/{{ plant.name | lower | replace(' ', '-') }}-{{ plant.id }}">🪴 <span class="sidebar-text">{{ plant.name }}</span></a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </aside>
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const modeToggle = document.getElementById('mode-toggle');
+        const darkPref = localStorage.getItem('darkMode') === 'true';
+
+        if (darkPref) {
+          document.body.classList.add('dark-mode');
+        }
+
+        if (modeToggle) {
+          modeToggle.checked = darkPref;
+          modeToggle.addEventListener('change', function () {
+            const enabled = modeToggle.checked;
+            document.body.classList.toggle('dark-mode', enabled);
+            localStorage.setItem('darkMode', enabled);
+          });
+        }
+
+        // Sidebar Toggle
+        const toggle = document.getElementById('sidebar-toggle');
+        if (toggle) {
+          toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.body.classList.toggle('sidebar-collapsed');
+          });
+        }
+
+        // Profilbild Dropdown
+        const avatarBtn = document.getElementById('avatar-btn');
+        const dropdownParent = document.getElementById('profile-dropdown-parent');
+        if (avatarBtn && dropdownParent) {
+          avatarBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdownParent.classList.toggle('open');
+          });
+          // Schließen, wenn man außerhalb klickt
+          document.addEventListener('click', function (e) {
+            if (dropdownParent.classList.contains('open') && !dropdownParent.contains(e.target)) {
+              dropdownParent.classList.remove('open');
+            }
+          });
+        }
+      });
+    </script>
+</body>
+</html>

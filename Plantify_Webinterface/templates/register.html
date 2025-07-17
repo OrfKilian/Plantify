@@ -1,0 +1,27 @@
+{% extends 'auth_base.html' %}
+{% block title %}Registrieren{% endblock %}
+
+{% block content %}
+<div class="split left">
+    <div>
+        <h1>Plantify Registrierung</h1>
+        <p>Erstelle jetzt kostenlos deinen Account!</p>
+    </div>
+</div>
+<div class="split right">
+    <form method="POST" class="auth-form">
+        <h2 style="text-align:center;">Registrieren</h2>
+        {% if error %}
+            <p style="color: red; text-align:center;">{{ error }}</p>
+        {% endif %}
+        <input type="email" id="email" name="email" placeholder="E-Mail" required>
+        <input type="password" id="password" name="password" placeholder="Passwort" required>
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="Passwort bestätigen" required>
+        <button type="submit">Registrieren</button>
+        <p style="text-align:center; margin-top: 1.5em;">
+            Schon registriert?
+            <a href="{{ url_for('login') }}">Zum Login</a>
+        </p>
+    </form>
+</div>
+{% endblock %}

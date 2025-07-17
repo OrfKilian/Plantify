@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ trivial }} ({{ botanisch }}){% endblock %}
+{% block page_title %}{{ trivial }} ({{ botanisch }}){% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="card full-width-card" id="extra-facts">
+        <h3>Schnellübersicht</h3>
+        <div>
+            <label for="target-temperature">Temperatur (°C)</label>
+            <input type="number" id="target-temperature" class="pflege-edit"
+                   value="{{ plant.target_temperature }}">
+        </div>
+        <div>
+            <label for="target-air-humidity">Luftfeuchtigkeit (%)</label>
+            <input type="number" id="target-air-humidity" class="pflege-edit"
+                   value="{{ plant.target_air_humidity }}">
+        </div>
+        <div>
+            <label for="target-ground-humidity">Bodenfeuchtigkeit (%)</label>
+            <input type="number" id="target-ground-humidity" class="pflege-edit"
+                   value="{{ plant.target_ground_humidity }}">
+        </div>
+    </div>
+
+    <div class="card full-width-card" id="facts-box">
+        <h3>Pflanzen Fakten</h3>
+        <div>
+            <label for="plant-name">Name:</label>
+            <input type="text" id="plant-name" class="pflege-edit" placeholder="{{ plant.name }}">
+        </div>
+        <textarea id="facts-textarea" class="pflege-edit" rows="3" placeholder="Fakten hier eingeben...">{{ plant.facts }}</textarea>
+        <div style="margin-top:10px;">
+            <label for="room-select">Zimmer:</label>
+            <select id="room-select" class="pflege-edit" style="height:auto;">
+                <option value="" {% if not plant.room %}selected{% endif %}>Kein Zimmer</option>
+                {% for room in rooms %}
+                <option value="{{ room.name }}" {% if room.name == plant.room %}selected{% endif %}>{{ room.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button id="save-facts-btn" class="pflege-edit" style="margin-top:10px;">Speichern</button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const saveBtn = document.getElementById('save-facts-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async function () {
+      const facts = document.getElementById('facts-textarea').value;
+      const nameInput = document.getElementById('plant-name');
+      const name = nameInput.value || nameInput.placeholder;
+      const roomSelect = document.getElementById('room-select');
+      const room = roomSelect.value || null;
+      const targetTemperature = document.getElementById('target-temperature').value;
+      const targetAirHumidity = document.getElementById('target-air-humidity').value;
+      const targetGroundHumidity = document.getElementById('target-ground-humidity').value;
+      const data = {
+        facts: facts,
+        name: name,
+        room: room,
+        target_temperature: targetTemperature,
+        target_air_humidity: targetAirHumidity,
+        target_ground_humidity: targetGroundHumidity
+      };
+      await fetch('/api/plant/{{ plant.id }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const newSlug = name.toLowerCase().replace(/\s+/g, '-') + '-{{ plant.id }}';
+      const currentSlug = window.location.pathname.split('/').pop();
+      if (newSlug !== currentSlug) {
+        window.location.href = '/pflanze/' + newSlug;
+      } else {
+        alert('Gespeichert');
+      }
+    });
+  }
+});
+</script>
+
+{% endblock %}
