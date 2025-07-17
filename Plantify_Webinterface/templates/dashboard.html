@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ room }}{% endblock %}
+{% block page_title %}Dashboard - {{ room }}{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="card full-width-card" id="care-guidelines">
+        <h3>Schnellübersicht</h3>
+        <table class="care-table">
+            <thead>
+                <tr>
+                    <th>Pflanze</th>
+                    <th>Temperatur (Ist/Soll)</th>
+                    <th>Luftfeuchtigkeit (Ist/Soll)</th>
+                    <th>Bodenfeuchtigkeit (Ist/Soll)</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for plant in room_plants %}
+                <tr data-pot-id="{{ plant.id }}">
+                    <td>{{ plant.name }}</td>
+                    <td><span class="val-temp">--</span> / {{ plant.target_temperature }}</td>
+                    <td><span class="val-air">--</span> / {{ plant.target_air_humidity }}</td>
+                    <td><span class="val-soil">--</span> / {{ plant.target_ground_humidity }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card charts-card">
+        <div class="chart-container">
+            <h3>Sonnenstunden</h3>
+            <div id="plot-sun"></div>
+        </div>
+        <div class="chart-container">
+            <h3>Temperatur Verlauf</h3>
+            <div id="plot-temp"></div>
+        </div>
+        <div class="chart-container">
+            <h3>Bodenfeuchtigkeit Verlauf</h3>
+            <div id="plot-soil"></div>
+        </div>
+        <div class="chart-container">
+            <h3>Luftfeuchtigkeit Verlauf</h3>
+            <div id="plot-air"></div>
+        </div>
+    </div>
+
+    <div class="card facts-card" id="facts-box">
+        <h3>Pflanzen Fakten</h3>
+        <ul>
+        {% for plant in room_plants %}
+            {% if plant.facts %}
+            <li>{{ plant.name }}: {{ plant.facts }}</li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='plots.js') }}"></script>
+{% endblock %}

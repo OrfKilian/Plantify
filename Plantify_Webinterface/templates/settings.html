@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Einstellungen{% endblock %}
+{% block page_title %}Einstellungen{% endblock %}
+
+{% block content %}
+<div class="mode-toggle-wrapper">
+    <label class="switch">
+        <input type="checkbox" id="mode-toggle">
+        <span class="slider round"></span>
+    </label>
+    <span id="mode-label">Dark Mode</span>
+</div>
+
+<h3>Anmelde-E-Mail ändern</h3>
+{% if msg_email == 'success' %}
+<p style="color:green;">E-Mail erfolgreich aktualisiert.</p>
+{% elif msg_email == 'error' %}
+<p style="color:red;">Ungültige E-Mail.</p>
+{% endif %}
+<form method="POST" action="{{ url_for('change_email') }}" class="auth-form">
+    <input type="email" name="new_email" placeholder="Neue E-Mail" required>
+    <button type="submit">Speichern</button>
+</form>
+
+<h3>Passwort ändern</h3>
+{% if msg_pw == 'success' %}
+<p style="color:green;">Passwort erfolgreich geändert.</p>
+{% elif msg_pw == 'wrong' %}
+<p style="color:red;">Aktuelles Passwort falsch.</p>
+{% elif msg_pw == 'mismatch' %}
+<p style="color:red;">Neue Passwörter stimmen nicht überein.</p>
+{% endif %}
+<form method="POST" action="{{ url_for('change_password') }}" class="auth-form">
+    <input type="password" name="current_password" placeholder="Aktuelles Passwort" required>
+    <input type="password" name="new_password" placeholder="Neues Passwort" required>
+    <input type="password" name="confirm_password" placeholder="Neues Passwort bestätigen" required>
+    <button type="submit">Passwort ändern</button>
+</form>
+{% endblock %}
