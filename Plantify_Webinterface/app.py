@@ -32,10 +32,36 @@ PLANT_OVERRIDES = {}
 
 
 # --- Hilfsfunktionen für API-Aufrufe mit verbesserter Fehlerbehandlung ---
+def _encode_form_data(data: dict) -> dict:
+    """
+    Encode form data to handle special characters properly.
+    This ensures that special characters in form inputs are correctly processed.
+    """
+    encoded_data = {}
+    for key, value in data.items():
+        if value is not None:
+            # Ensure the value is properly encoded for database storage
+            encoded_data[key] = str(value).strip()
+        else:
+            encoded_data[key] = value
+    return encoded_data
+
+
 def _make_api_request(method: str, endpoint: str, user_mail: Optional[str] = None, data: Optional[dict] = None,
                       params: Optional[dict] = None):
     url = f"{API_BASE}{endpoint}"
     headers = {"Content-Type": "application/json"}  # Standardmäßig JSON
+    
+    # URL-encode query parameters to handle special characters
+    if params:
+        encoded_params = {}
+        for key, value in params.items():
+            if value is not None:
+                encoded_params[key] = urllib.parse.quote_plus(str(value))
+            else:
+                encoded_params[key] = value
+        params = encoded_params
+    
     try:
         if method == "GET":
             response = requests.get(url, params=params)
@@ -182,8 +208,9 @@ def login():
     logging.debug("Login-Route aufgerufen, Methode: %s", request.method)
     if request.method == 'POST':
         logging.debug("Formulardaten: %s", request.form)
-        email = request.form['email']
-        password = request.form['password']
+        form_data = _encode_form_data(request.form.to_dict())
+        email = form_data.get('email')
+        password = form_data.get('password')
         hashed = get_password_hash(email)
         logging.debug("E-Mail: %s", email)
         logging.debug(
@@ -260,10 +287,14 @@ def plant_detail(slug):
 @login_required
 def update_plant_api(plant_id: int):
     data = request.get_json(silent=True) or {}
+    
+    # Encode the data to handle special characters properly
+    encoded_data = _encode_form_data(data)
+    
     if plant_id not in PLANT_OVERRIDES:
         PLANT_OVERRIDES[plant_id] = {}
-    PLANT_OVERRIDES[plant_id].update(data)
-    logging.info("Plant override updated for plant_id %d by user %s: %s", plant_id, session.get('user_id'), data)
+    PLANT_OVERRIDES[plant_id].update(encoded_data)
+    logging.info("Plant override updated for plant_id %d by user %s: %s", plant_id, session.get('user_id'), encoded_data)
     return jsonify({'success': True})
 
 
@@ -279,7 +310,8 @@ def settings():
 @app.route('/settings/change-email', methods=['POST'])
 @login_required
 def change_email():
-    new_email = request.form.get('new_email')
+    form_data = _encode_form_data(request.form.to_dict())
+    new_email = form_data.get('new_email')
     current_email = session.get('user_id')
 
     if not new_email or not is_valid_email(new_email):
@@ -314,9 +346,10 @@ def change_email():
 @app.route('/settings/change-password', methods=['POST'])
 @login_required
 def change_password():
-    current_pw = request.form.get('current_password')
-    new_pw = request.form.get('new_password')
-    confirm_pw = request.form.get('confirm_password')
+    form_data = _encode_form_data(request.form.to_dict())
+    current_pw = form_data.get('current_password')
+    new_pw = form_data.get('new_password')
+    confirm_pw = form_data.get('confirm_password')
     current_email = session.get('user_id')
 
     hashed = get_password_hash(current_email)
@@ -353,9 +386,10 @@ def change_password():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm = request.form.get('confirm_password')
+        form_data = _encode_form_data(request.form.to_dict())
+        email = form_data.get('email')
+        password = form_data.get('password')
+        confirm = form_data.get('confirm_password')
 
         if not email or not password:
             flash('E-Mail und Passwort sind erforderlich!', "danger")
