@@ -1,0 +1,26 @@
+{% extends 'auth_base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="split left">
+    <div>
+        <h1>Willkommen bei Plantify!</h1>
+        <p>Bitte logge dich ein, um fortzufahren.</p>
+    </div>
+</div>
+<div class="split right">
+    <form method="POST" class="auth-form">
+        <h2 style="text-align:center;">Login</h2>
+        {% if error %}
+            <p style="color: red; text-align:center;">{{ error }}</p>
+        {% endif %}
+        <input type="email" id="email" name="email" placeholder="E-Mail" required>
+        <input type="password" id="password" name="password" placeholder="Passwort" required>
+        <button type="submit">Login</button>
+        <p style="text-align:center; margin-top: 1.5em;">
+            Noch kein Konto?
+            <a href="{{ url_for('register') }}">Jetzt registrieren</a>
+        </p>
+    </form>
+</div>
+{% endblock %}

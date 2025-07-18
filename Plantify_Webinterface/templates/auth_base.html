@@ -1,0 +1,15 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plantify{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-layout">
+    <main class="auth-content" style="display:flex;height:100vh;">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
